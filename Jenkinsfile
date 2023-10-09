@@ -63,7 +63,9 @@ node {
     // ---------------------------------------------------- UNIT TESTS -------------------------------------------------------------------- //
     stage('Code Unit Tests') { 
         publishChecks name: "${githubChecks.unit_tests}", detailsURL: "${detailsURL}", status: "${status.in_progress}", conclusion: "${conclusions.none}"
-        sh 'mvn test' 
+        withMaven {
+            sh 'mvn test'
+        }        
         publishChecks name: "${githubChecks.unit_tests}", detailsURL: "${detailsURL}", status: "${status.completed}", conclusion: "${conclusions.success}"
     }
 }
