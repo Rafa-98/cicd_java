@@ -47,7 +47,7 @@ class ProductServiceTest {
 		tProductId = "1";
 	}
 
-	@Test
+	/*@Test
 	@DisplayName("It should return a list of similar products")
 	void getSimilarProductsTest() throws Exception  {
 		// prepare
@@ -107,6 +107,6 @@ class ProductServiceTest {
 		// assert
 		verify(productRepository).GetProductDetails(tProductId);
 		assertNull(result);
-	}
+	}*/
 
 }

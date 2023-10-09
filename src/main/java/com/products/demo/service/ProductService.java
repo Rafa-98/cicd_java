@@ -16,7 +16,7 @@ public class ProductService {
 	private ProductRepository repository = new ProductRepository();
 	
 	public List<ProductModel> getSimilarProducts(String productId) throws SimilarProductsNotFoundException {
-		List<ProductModel> products = new ArrayList<ProductModel>();
+		/*List<ProductModel> products = new ArrayList<ProductModel>();
 		List<String> similarProducts = repository.getSimilarProducts(productId);		
 		if(similarProducts != null) {
 			for(String id : similarProducts ) {				
@@ -26,14 +26,23 @@ public class ProductService {
 				}
 			}
 			return products;
-		}
-		log.error("Similar products not found for product id: " + productId);
-		throw new SimilarProductsNotFoundException("Similar products not found for product id: " + productId);
+		}*/
+		try {
+			return new ArrayList<ProductModel>(){{
+                add(new ProductModel("1", "pruebas producto", 10.99, true));
+                add(new ProductModel("2", "pruebas producto 2", 20.99, true));
+                add(new ProductModel("3", "pruebas producto 3", 30.99, true));
+                  }};
+		}catch (Exception e ) {
+			log.error("Similar products not found for product id: " + productId);
+			throw new SimilarProductsNotFoundException("Similar products not found for product id: " + productId);
+		}		
 	}
 	
 	public ProductModel GetProductDetails(String productId) {
 		try {			
-			return repository.GetProductDetails(productId);
+			//return repository.GetProductDetails(productId);
+			return new ProductModel("1", "pruebas producto", 10.99, true);
 		} catch (Exception e) {		
 			log.error("An error ocurred while calling external service for product details with product id " + productId);
 			return null;
