@@ -48,7 +48,7 @@ node {
 
     // ---------------------------------------------------- GET REPOSITORY CODE -------------------------------------------------------- //
     stage('validate branch name') {                             
-        def github_credentials_id = "rafa_github_credentials"
+        def github_credentials_id = "Rafa-Jenkins-Git-App"
         def repository_url = "https://github.com/Rafa-98/cicd_java"
         if(env.CHANGE_BRANCH) {
             git branch: env.CHANGE_BRANCH, credentialsId: "${github_credentials_id}", url: "${repository_url}"
