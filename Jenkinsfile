@@ -68,4 +68,35 @@ node {
         }        
         publishChecks name: "${githubChecks.unit_tests}", detailsURL: "${detailsURL}", status: "${status.completed}", conclusion: "${conclusions.success}"
     }
+
+    // ---------------------------------------------------- CODE ANALYSIS -------------------------------------------------------- //
+    stage('Code Analysis') {
+        publishChecks name: "${githubChecks.code_analysis}", detailsURL: "${detailsURL}", status: "${status.in_progress}", conclusion: "${conclusions.none}"
+        try {
+            def scannerHome = tool 'dev_sonar_scanner'
+            withSonarQubeEnv('dev_sonarqube_server') {
+                withCredentials([string(credentialsId: 'sonar-products-api-token', variable: 'sonarProjectToken')]) {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=products-api -Dsonar.login=${sonarProjectToken} -Dsonar.branch.name=${currentBranch}"            
+                }
+            }
+        } catch(Exception e) {
+            sh "echo ERROR: Ha ocurrido un error durante la ejecución de análisis de código. ${e.getMessage()}"
+            publishChecks name: "${githubChecks.code_analysis}", detailsURL: "${detailsURL}", status: "${status.completed}", conclusion: "${conclusions.failure}"
+        }
+    }    
+
+    // ---------------------------------------------------- WAIT FOR QUALITY GATE -------------------------------------------------------- //
+    stage("Quality Gate") {
+        timeout(time: 1, unit: 'HOURS') {
+            def qg = waitForQualityGate()
+            if (qg.status != 'OK') {
+                publishChecks name: "${githubChecks.code_analysis}", detailsURL: "${detailsURL}", status: "${status.completed}", conclusion: "${conclusions.failure}"
+                error "ERROR: Pipeline aborted due to quality gate failure: ${qg.status}"
+            }
+            else {
+                sh 'echo SUCCESS: El proyecto aprobó los criterios mínimos de calidad.'
+                publishChecks name: "${githubChecks.code_analysis}", detailsURL: "${detailsURL}", status: "${status.completed}", conclusion: "${conclusions.success}"
+            }
+        }
+    }
 }
