@@ -76,7 +76,10 @@ node {
             def scannerHome = tool 'dev_sonar_scanner'
             withSonarQubeEnv('dev_sonarqube_server') {
                 withCredentials([string(credentialsId: 'sonar-products-api-token', variable: 'sonarProjectToken')]) {
-                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=products-api -Dsonar.login=${sonarProjectToken} -Dsonar.branch.name=${currentBranch}"            
+                    withMaven {
+                        sh 'mvn clean package'
+                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=products-api -Dsonar.login=${sonarProjectToken} -Dsonar.branch.name=${currentBranch}"            
+                    } 
                 }
             }
         } catch(Exception e) {
