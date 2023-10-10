@@ -76,10 +76,8 @@ node {
             def scannerHome = tool 'dev_sonar_scanner'
             withSonarQubeEnv('dev_sonarqube_server') {
                 withCredentials([string(credentialsId: 'sonar-products-api-token', variable: 'sonarProjectToken')]) {
-                    withMaven {
-                        //sh 'mvn clean package sonar:sonar'
-                        sh "mvn clean verify sonar:sonar -Dsonar.projectKey=products-api -Dsonar.login=${sonarProjectToken} -Dsonar.branch.name=${currentBranch}"
-                        //sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=products-api -Dsonar.login=${sonarProjectToken} -Dsonar.branch.name=${currentBranch}"            
+                    withMaven {                        
+                        sh "mvn clean verify sonar:sonar -Dsonar.projectKey=products-api -Dsonar.login=${sonarProjectToken} -Dsonar.branch.name=${currentBranch}"                        
                     } 
                 }
             }
@@ -102,5 +100,50 @@ node {
                 publishChecks name: "${githubChecks.code_analysis}", detailsURL: "${detailsURL}", status: "${status.completed}", conclusion: "${conclusions.success}"
             }
         }
+    }
+
+    def shouldDeploy = deploymentDecision(env.BRANCH_NAME)
+    if(shouldDeploy) {        
+        def deploy_env = getDeploymentName(env.BRANCH_NAME)                
+        // ---------------------------------------------------- APP IMAGE BUILD ---------------------------------------------------------------- //
+        stage("App Image Build") {
+            try {
+                publishChecks name: "${githubChecks.app_build}", detailsURL: "${detailsURL}", status: "${status.in_progress}", conclusion: "${conclusions.none}"
+                sh "docker build . -t mendezrafael98/${app_name}:${deploy_env}"            
+                publishChecks name: "${githubChecks.app_build}", detailsURL: "${detailsURL}", status: "${status.completed}", conclusion: "${conclusions.success}"
+            } catch(Exception ex) {
+                publishChecks name: "${githubChecks.app_build}", detailsURL: "${detailsURL}", status: "${status.completed}", conclusion: "${conclusions.failure}"
+                error "ERROR. Aborting App Build execution. ${e.getMessage()}"
+            }
+        }
+
+        // ---------------------------------------------------- APP PUBLISH TO REGISTRY -------------------------------------------------------- //
+        stage("App publish to Container Registry") {
+            try {
+                publishChecks name: "${githubChecks.app_publish}", detailsURL: "${detailsURL}", status: "${status.in_progress}", conclusion: "${conclusions.none}"
+                withDockerRegistry([ credentialsId: "rafa_docker_registry_credentials", url: "" ]) {
+                    sh "docker push mendezrafael98/${app_name}:${deploy_env}"
+                }
+                publishChecks name: "${githubChecks.app_publish}", detailsURL: "${detailsURL}", status: "${status.completed}", conclusion: "${conclusions.success}"
+            } catch(Exception ex) {
+                publishChecks name: "${githubChecks.app_publish}", detailsURL: "${detailsURL}", status: "${status.completed}", conclusion: "${conclusions.failure}"
+                error "ERROR. Aborting App Publish to Container Registry execution. ${e.getMessage()}"
+            }
+        }
+
+        // ---------------------------------------------------- APP DEPLOYMENT-------- -------------------------------------------------------- //
+        stage("App deployment") {
+            try {
+                publishChecks name: "${githubChecks.app_deployment}", detailsURL: "${detailsURL}", status: "${status.in_progress}", conclusion: "${conclusions.none}"
+                ansiblePlaybook credentialsId: 'admin_ssh_access', disableHostKeyChecking: true, installation: 'dev_ansible_server', inventory: '/etc/ansible/hosts', playbook: "/usr/local/ansible/manifests/commons/execute-deployment.yaml", extraVars: [app_name: "${app_name}", app_env: "${deploy_env}"]
+                publishChecks name: "${githubChecks.app_deployment}", detailsURL: "${detailsURL}", status: "${status.completed}", conclusion: "${conclusions.success}"
+            } catch(Exception ex) {
+                publishChecks name: "${githubChecks.app_deployment}", detailsURL: "${detailsURL}", status: "${status.completed}", conclusion: "${conclusions.failure}"
+                error "ERROR. Aborting App Deployment execution. ${e.getMessage()}"
+            }
+        }
+    }
+    else {
+        sh "echo No project image build and deployment for branch ${env.BRANCH_NAME} is needed."
     }
 }
