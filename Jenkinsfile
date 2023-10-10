@@ -77,8 +77,9 @@ node {
             withSonarQubeEnv('dev_sonarqube_server') {
                 withCredentials([string(credentialsId: 'sonar-products-api-token', variable: 'sonarProjectToken')]) {
                     withMaven {
-                        sh 'mvn clean package'
-                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=products-api -Dsonar.login=${sonarProjectToken} -Dsonar.branch.name=${currentBranch}"            
+                        //sh 'mvn clean package sonar:sonar'
+                        sh "mvn clean verify sonar:sonar -Dsonar.projectKey=products-api -Dsonar.login=${sonarProjectToken} -Dsonar.branch.name=${currentBranch}"
+                        //sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=products-api -Dsonar.login=${sonarProjectToken} -Dsonar.branch.name=${currentBranch}"            
                     } 
                 }
             }
