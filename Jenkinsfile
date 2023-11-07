@@ -120,7 +120,7 @@ node {
         stage("App publish to Container Registry") {
             try {
                 publishChecks name: "${githubChecks.app_publish}", detailsURL: "${detailsURL}", status: "${status.in_progress}", conclusion: "${conclusions.none}"
-                withDockerRegistry([ credentialsId: "docker_server_registry_credentials", url: "https://${ams.registry}/v2/" ]) {
+                withDockerRegistry([ credentialsId: "docker_server_registry_credentials", url: "https://${docker_registry_host}/v2/" ]) {
                     sh "docker push ${docker_registry_host}/${app_name}:${deploy_env}"
                 }
                 publishChecks name: "${githubChecks.app_publish}", detailsURL: "${detailsURL}", status: "${status.completed}", conclusion: "${conclusions.success}"
