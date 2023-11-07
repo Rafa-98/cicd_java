@@ -1,9 +1,9 @@
 def deploymentDecision(branch) {
     switch(branch) {
-        case "main": return false; break;
+        case "main": return true; break;
         case branch.contains("hotfix"): return true; break;
         case branch.contains("release"): return true; break;
-        case "qa": return true; break;
+        case "qa": return false; break;
         case "develop": return true; break;
         case branch.contains("feature"): return false; break;
         case branch.contains("fix"): return false; break;
@@ -15,7 +15,7 @@ def getDeploymentName(branch) {
     switch(branch) {
         case "main": return "production"; break;
         case branch.contains("hotfix"): return "hotfix"; break;
-        case branch.contains("release"): return "preprod"; break;
+        case branch.contains("release"): return "release"; break;
         case "qa": return "qa"; break;
         case "develop": return "develop"; break;        
         default: "unknown"; break;    
@@ -44,7 +44,8 @@ node {
         success: "SUCCESS", 
         none: "NONE"
     ]
-    def app_name = "cicd-products-api"
+    def app_name = "prafa"
+    def docker_registry_host = "ams.registry"
 
     // ---------------------------------------------------- GET REPOSITORY CODE -------------------------------------------------------- //
     stage('validate branch name') {                             
@@ -62,10 +63,8 @@ node {
 
     // ---------------------------------------------------- UNIT TESTS -------------------------------------------------------------------- //
     stage('Code Unit Tests') { 
-        publishChecks name: "${githubChecks.unit_tests}", detailsURL: "${detailsURL}", status: "${status.in_progress}", conclusion: "${conclusions.none}"
-        withMaven {
-            sh 'mvn test'
-        }        
+        publishChecks name: "${githubChecks.unit_tests}", detailsURL: "${detailsURL}", status: "${status.in_progress}", conclusion: "${conclusions.none}"       
+        sh 'mvn test'       
         publishChecks name: "${githubChecks.unit_tests}", detailsURL: "${detailsURL}", status: "${status.completed}", conclusion: "${conclusions.success}"
     }
 
@@ -109,7 +108,7 @@ node {
         stage("App Image Build") {
             try {
                 publishChecks name: "${githubChecks.app_build}", detailsURL: "${detailsURL}", status: "${status.in_progress}", conclusion: "${conclusions.none}"
-                sh "docker build . -t mendezrafael98/${app_name}:${deploy_env}"            
+                sh "docker build . -t ${docker_registry_host}/${app_name}:${deploy_env}"            
                 publishChecks name: "${githubChecks.app_build}", detailsURL: "${detailsURL}", status: "${status.completed}", conclusion: "${conclusions.success}"
             } catch(Exception ex) {
                 publishChecks name: "${githubChecks.app_build}", detailsURL: "${detailsURL}", status: "${status.completed}", conclusion: "${conclusions.failure}"
@@ -121,8 +120,8 @@ node {
         stage("App publish to Container Registry") {
             try {
                 publishChecks name: "${githubChecks.app_publish}", detailsURL: "${detailsURL}", status: "${status.in_progress}", conclusion: "${conclusions.none}"
-                withDockerRegistry([ credentialsId: "rafa_docker_registry_credentials", url: "" ]) {
-                    sh "docker push mendezrafael98/${app_name}:${deploy_env}"
+                withDockerRegistry([ credentialsId: "docker_server_registry_credentials", url: "" ]) {
+                    sh "docker push ${docker_registry_host}/${app_name}:${deploy_env}"
                 }
                 publishChecks name: "${githubChecks.app_publish}", detailsURL: "${detailsURL}", status: "${status.completed}", conclusion: "${conclusions.success}"
             } catch(Exception ex) {

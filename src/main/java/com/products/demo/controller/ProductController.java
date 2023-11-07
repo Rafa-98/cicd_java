@@ -20,7 +20,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
 
 @RestController
-@RequestMapping("/product")
+@RequestMapping("/")
 @Validated
 @Slf4j
 public class ProductController {
