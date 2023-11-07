@@ -20,7 +20,7 @@ def getDeploymentName(branch) {
         case "develop": return "develop"; break;        
         default: "unknown"; break;
     }
-}
+} 
 
 node {
     // ---------------------------------------------------- VARIABLES DEFINITION -------------------------------------------------------- //
