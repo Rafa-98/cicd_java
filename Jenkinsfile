@@ -1,24 +1,24 @@
 def deploymentDecision(branch) {
-    switch(branch) {
+    switch(branch.split('/')[0]) {
         case "main": return true; break;
-        case branch.contains("hotfix"): return true; break;
-        case branch.contains("release"): return true; break;
+        case "hotfix": return true; break;
+        case "release": return true; break;
         case "qa": return false; break;
         case "develop": return true; break;
-        case branch.contains("feature"): return false; break;
-        case branch.contains("fix"): return false; break;
+        case "feature": return false; break;
+        case "fix": return false; break;
         default: false; break;
     }
 }
 
 def getDeploymentName(branch) {
-    switch(branch) {
+    switch(branch.split('/')[0]) {
         case "main": return "production"; break;
-        case branch.contains("hotfix"): return "hotfix"; break;
-        case branch.contains("release"): return "release"; break;
+        case "hotfix": return "hotfix"; break;
+        case "release": return "release"; break;
         case "qa": return "qa"; break;
         case "develop": return "develop"; break;        
-        default: "unknown"; break;    
+        default: "unknown"; break;
     }
 }
 
